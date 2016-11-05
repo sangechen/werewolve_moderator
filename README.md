@@ -1,0 +1,1 @@
+# werewolve_moderator
