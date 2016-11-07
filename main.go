@@ -3,6 +3,7 @@ package main
 import (
 	"log"
 	"net/http"
+	"sync"
 
 	"github.com/chanxuehong/wechat.v2/mp/core"
 	"github.com/chanxuehong/wechat.v2/mp/menu"
@@ -14,15 +15,16 @@ const (
 	wxAppId     = "wx0a0cca0eeaf499f5"
 	wxAppSecret = "31b863270ee4b4b5b2c83038c233778f"
 
-	wxOriId         = ""
+	wxOriId         = "gh_035061674bc6"
 	wxToken         = "abcd1234"
 	wxEncodedAESKey = "hI8w2QQF1VmtpZTgG9nnBkox7NIsBfyKQKON6NIT3uV"
 )
 
 var (
 	// 下面两个变量不一定非要作为全局变量, 根据自己的场景来选择.
-	msgHandler core.Handler
-	msgServer  *core.Server
+	msgHandler  core.Handler
+	msgServer   *core.Server
+	globalMutex = &sync.Mutex{}
 )
 
 func init() {
@@ -39,10 +41,14 @@ func init() {
 func textMsgHandler(ctx *core.Context) {
 	log.Printf("收到文本消息:\n%s\n", ctx.MsgPlaintext)
 
+	globalMutex.Lock()
+
 	msg := request.GetText(ctx.MixedMsg)
 	resp := response.NewText(msg.FromUserName, msg.ToUserName, msg.CreateTime, msg.Content)
 	//ctx.RawResponse(resp) // 明文回复
 	ctx.AESResponse(resp, 0, "", nil) // aes密文回复
+
+	globalMutex.Unlock()
 }
 
 func defaultMsgHandler(ctx *core.Context) {
